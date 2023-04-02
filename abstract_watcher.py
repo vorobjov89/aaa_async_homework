@@ -1,4 +1,5 @@
 import abc
+import asyncio
 from typing import Coroutine, Any
 
 """
@@ -64,17 +65,35 @@ class AbstractWatcher(abc.ABC):
 class StudentWatcher(AbstractWatcher):
     def __init__(self, registrator: AbstractRegistrator):
         super().__init__(registrator)
-        # Your code goes here
-        ...
+        self.tasks = []
+        self.queue = asyncio.Queue()
 
     async def start(self) -> None:
-        # Your code goes here
-        ...
-
+        async def awaiter():
+            n_prev = None
+            while True:
+                
+                try:
+                    self.tasks.append(self.queue.get_nowait())
+                except asyncio.QueueEmpty:
+                    await asyncio.sleep(0.3)
+                    
+                if len(self.tasks) == n_prev:
+                    for task in self.tasks:
+                        if task.exception():
+                            self.registrator.register_error(task.exception())
+                        else:
+                            self.registrator.register_value(task.result())
+                    break
+                else:
+                    n_prev = len(self.tasks)
+                    
+        await asyncio.wait([asyncio.create_task(awaiter())], timeout=0.0)
+        
+        
     async def stop(self) -> None:
-        # Your code goes here
-        ...
+        for task in self.tasks:
+            task.cancel()
 
     def start_and_watch(self, coro: Coroutine) -> None:
-        # Your code goes here
-        ...
+        self.queue.put_nowait(asyncio.create_task(coro))

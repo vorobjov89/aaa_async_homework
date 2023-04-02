@@ -6,14 +6,13 @@ from asyncio import Queue
 
 from abstract_watcher import AbstractRegistrator, AbstractWatcher, StudentWatcher
 
-
 class ResultsRegistrator(AbstractRegistrator):
     def __init__(self):
         self.values = []
         self.errors = []
 
     def register_value(self, value: Any) -> None:
-        self.values.append(value)
+         self.values.append(value)
 
     def register_error(self, error: BaseException) -> None:
         self.errors.append(error)
